@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -7,7 +6,6 @@
     <title>ETF Savings Plan Calculator</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://unpkg.com/recharts@2.8.0/umd/Recharts.js"></script>
     <script src="https://unpkg.com/lucide-react@0.263.1/dist/umd/lucide-react.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -15,6 +13,319 @@
 <body>
     <div id="root"></div>
     
-    <script type="text/babel" src="app.js"></script>
+    <script>
+        const { useState, useEffect, createElement: h } = React;
+        const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } = Recharts;
+        const { Calculator, TrendingUp, DollarSign, Clock } = LucideReact;
+
+        function ETFSavingsCalculator() {
+          const [monthlyContribution, setMonthlyContribution] = useState(500);
+          const [annualReturn, setAnnualReturn] = useState(7);
+          const [timeHorizon, setTimeHorizon] = useState(20);
+          const [initialInvestment, setInitialInvestment] = useState(0);
+          const [results, setResults] = useState(null);
+
+          const calculateReturns = () => {
+            const monthlyReturn = annualReturn / 100 / 12;
+            const totalMonths = timeHorizon * 12;
+            
+            let chartData = [];
+            let currentValue = initialInvestment;
+            let totalContributions = initialInvestment;
+            
+            chartData.push({
+              year: 0,
+              totalValue: initialInvestment,
+              totalContributions: initialInvestment,
+              totalReturns: 0
+            });
+            
+            for (let month = 1; month <= totalMonths; month++) {
+              currentValue += monthlyContribution;
+              totalContributions += monthlyContribution;
+              currentValue *= (1 + monthlyReturn);
+              
+              if (month % 12 === 0) {
+                const year = month / 12;
+                const totalReturns = currentValue - totalContributions;
+                
+                chartData.push({
+                  year: year,
+                  totalValue: Math.round(currentValue),
+                  totalContributions: totalContributions,
+                  totalReturns: Math.round(totalReturns)
+                });
+              }
+            }
+            
+            const finalValue = currentValue;
+            const totalInvested = totalContributions;
+            const totalReturns = finalValue - totalInvested;
+            const roi = ((finalValue - totalInvested) / totalInvested) * 100;
+            
+            setResults({
+              finalValue,
+              totalInvested,
+              totalReturns,
+              roi,
+              chartData
+            });
+          };
+
+          useEffect(() => {
+            calculateReturns();
+          }, [monthlyContribution, annualReturn, timeHorizon, initialInvestment]);
+
+          const formatCurrency = (amount) => {
+            return new Intl.NumberFormat('en-US', {
+              style: 'currency',
+              currency: 'USD',
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0
+            }).format(amount);
+          };
+
+          return h('div', {className: "min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4"},
+            h('div', {className: "max-w-6xl mx-auto"},
+              h('div', {className: "text-center mb-8"},
+                h('div', {className: "flex items-center justify-center gap-2 mb-4"},
+                  h(Calculator, {className: "w-8 h-8 text-indigo-600"}),
+                  h('h1', {className: "text-3xl font-bold text-gray-800"}, "ETF Savings Plan Calculator")
+                ),
+                h('p', {className: "text-gray-600"}, "Calculate the potential growth of your ETF investment over time")
+              ),
+
+              h('div', {className: "grid lg:grid-cols-3 gap-6"},
+                // Input Panel
+                h('div', {className: "lg:col-span-1"},
+                  h('div', {className: "bg-white rounded-xl shadow-lg p-6"},
+                    h('h2', {className: "text-xl font-semibold text-gray-800 mb-6"}, "Investment Parameters"),
+                    
+                    h('div', {className: "space-y-6"},
+                      h('div', null,
+                        h('label', {className: "block text-sm font-medium text-gray-700 mb-2"}, "Initial Investment"),
+                        h('div', {className: "relative"},
+                          h(DollarSign, {className: "absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"}),
+                          h('input', {
+                            type: "number",
+                            value: initialInvestment,
+                            onChange: (e) => setInitialInvestment(Number(e.target.value)),
+                            className: "w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent",
+                            placeholder: "0",
+                            min: "0"
+                          })
+                        )
+                      ),
+
+                      h('div', null,
+                        h('label', {className: "block text-sm font-medium text-gray-700 mb-2"}, "Monthly Contribution"),
+                        h('div', {className: "relative"},
+                          h(DollarSign, {className: "absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"}),
+                          h('input', {
+                            type: "number",
+                            value: monthlyContribution,
+                            onChange: (e) => setMonthlyContribution(Number(e.target.value)),
+                            className: "w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent",
+                            placeholder: "500",
+                            min: "0"
+                          })
+                        )
+                      ),
+
+                      h('div', null,
+                        h('label', {className: "block text-sm font-medium text-gray-700 mb-2"}, "Expected Annual Return (%)"),
+                        h('div', {className: "relative"},
+                          h(TrendingUp, {className: "absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"}),
+                          h('input', {
+                            type: "number",
+                            value: annualReturn,
+                            onChange: (e) => setAnnualReturn(Number(e.target.value)),
+                            className: "w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent",
+                            placeholder: "7",
+                            min: "0",
+                            max: "30",
+                            step: "0.1"
+                          })
+                        ),
+                        h('p', {className: "text-xs text-gray-500 mt-1"}, "Typical ETF returns: 6-8% annually")
+                      ),
+
+                      h('div', null,
+                        h('label', {className: "block text-sm font-medium text-gray-700 mb-2"}, "Investment Period (Years)"),
+                        h('div', {className: "relative"},
+                          h(Clock, {className: "absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"}),
+                          h('input', {
+                            type: "number",
+                            value: timeHorizon,
+                            onChange: (e) => setTimeHorizon(Number(e.target.value)),
+                            className: "w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent",
+                            placeholder: "20",
+                            min: "1",
+                            max: "50"
+                          })
+                        )
+                      )
+                    )
+                  )
+                ),
+
+                // Results Panel
+                h('div', {className: "lg:col-span-2"},
+                  results && [
+                    // Summary Cards
+                    h('div', {key: "summary", className: "grid md:grid-cols-2 gap-4 mb-6"},
+                      h('div', {className: "bg-white rounded-xl shadow-lg p-6"},
+                        h('div', {className: "flex items-center justify-between"},
+                          h('div', null,
+                            h('p', {className: "text-sm font-medium text-gray-600"}, "Final Portfolio Value"),
+                            h('p', {className: "text-2xl font-bold text-green-600"}, formatCurrency(results.finalValue))
+                          ),
+                          h('div', {className: "p-3 bg-green-100 rounded-full"},
+                            h(TrendingUp, {className: "w-6 h-6 text-green-600"})
+                          )
+                        )
+                      ),
+
+                      h('div', {className: "bg-white rounded-xl shadow-lg p-6"},
+                        h('div', {className: "flex items-center justify-between"},
+                          h('div', null,
+                            h('p', {className: "text-sm font-medium text-gray-600"}, "Total Returns"),
+                            h('p', {className: "text-2xl font-bold text-blue-600"}, formatCurrency(results.totalReturns)),
+                            h('p', {className: "text-sm text-gray-500"}, `ROI: ${results.roi.toFixed(1)}%`)
+                          ),
+                          h('div', {className: "p-3 bg-blue-100 rounded-full"},
+                            h(DollarSign, {className: "w-6 h-6 text-blue-600"})
+                          )
+                        )
+                      ),
+
+                      h('div', {className: "bg-white rounded-xl shadow-lg p-6"},
+                        h('div', {className: "flex items-center justify-between"},
+                          h('div', null,
+                            h('p', {className: "text-sm font-medium text-gray-600"}, "Total Invested"),
+                            h('p', {className: "text-2xl font-bold text-gray-700"}, formatCurrency(results.totalInvested))
+                          ),
+                          h('div', {className: "p-3 bg-gray-100 rounded-full"},
+                            h(Calculator, {className: "w-6 h-6 text-gray-600"})
+                          )
+                        )
+                      ),
+
+                      h('div', {className: "bg-white rounded-xl shadow-lg p-6"},
+                        h('div', {className: "flex items-center justify-between"},
+                          h('div', null,
+                            h('p', {className: "text-sm font-medium text-gray-600"}, "Monthly Contribution"),
+                            h('p', {className: "text-2xl font-bold text-indigo-600"}, formatCurrency(monthlyContribution)),
+                            h('p', {className: "text-sm text-gray-500"}, `${formatCurrency(monthlyContribution * 12)}/year`)
+                          ),
+                          h('div', {className: "p-3 bg-indigo-100 rounded-full"},
+                            h(Clock, {className: "w-6 h-6 text-indigo-600"})
+                          )
+                        )
+                      )
+                    ),
+
+                    // 4% Rule Section
+                    h('div', {key: "retirement", className: "bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl shadow-lg p-6 mb-6 border-l-4 border-purple-500"},
+                      h('h3', {className: "text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2"},
+                        h(TrendingUp, {className: "w-5 h-5 text-purple-600"}),
+                        "4% Rule - Retirement Income Potential"
+                      ),
+                      h('div', {className: "grid md:grid-cols-2 gap-4"},
+                        h('div', {className: "bg-white rounded-lg p-4"},
+                          h('p', {className: "text-sm font-medium text-gray-600 mb-1"}, "Annual Retirement Income"),
+                          h('p', {className: "text-2xl font-bold text-purple-600"}, formatCurrency(results.finalValue * 0.04)),
+                          h('p', {className: "text-xs text-gray-500 mt-1"}, "Based on 4% withdrawal rate")
+                        ),
+                        h('div', {className: "bg-white rounded-lg p-4"},
+                          h('p', {className: "text-sm font-medium text-gray-600 mb-1"}, "Monthly Retirement Income"),
+                          h('p', {className: "text-2xl font-bold text-purple-600"}, formatCurrency((results.finalValue * 0.04) / 12)),
+                          h('p', {className: "text-xs text-gray-500 mt-1"}, "Sustainable monthly withdrawal")
+                        )
+                      ),
+                      h('div', {className: "mt-4 p-3 bg-purple-50 rounded-lg"},
+                        h('p', {className: "text-sm text-purple-800"},
+                          h('strong', null, "The 4% Rule:"), " A guideline suggesting you can withdraw 4% of your portfolio annually in retirement without depleting your savings over a 30-year period, assuming historical market performance."
+                        )
+                      )
+                    ),
+
+                    // Growth Chart
+                    h('div', {key: "growth-chart", className: "bg-white rounded-xl shadow-lg p-6 mb-6"},
+                      h('h3', {className: "text-lg font-semibold text-gray-800 mb-4"}, "Portfolio Growth Over Time"),
+                      h(ResponsiveContainer, {width: "100%", height: 300},
+                        h(LineChart, {data: results.chartData},
+                          h(CartesianGrid, {strokeDasharray: "3 3"}),
+                          h(XAxis, {dataKey: "year"}),
+                          h(YAxis, {tickFormatter: (value) => formatCurrency(value)}),
+                          h(Tooltip, {
+                            formatter: (value, name) => [formatCurrency(value), name],
+                            labelFormatter: (label) => `Year ${label}`
+                          }),
+                          h(Legend),
+                          h(Line, {
+                            type: "monotone",
+                            dataKey: "totalValue",
+                            stroke: "#10b981",
+                            strokeWidth: 3,
+                            name: "Total Portfolio Value"
+                          }),
+                          h(Line, {
+                            type: "monotone",
+                            dataKey: "totalContributions",
+                            stroke: "#6b7280",
+                            strokeWidth: 2,
+                            name: "Total Contributions"
+                          }),
+                          h(Line, {
+                            type: "monotone",
+                            dataKey: "totalReturns",
+                            stroke: "#3b82f6",
+                            strokeWidth: 2,
+                            name: "Investment Returns"
+                          })
+                        )
+                      )
+                    ),
+
+                    // Breakdown Chart
+                    h('div', {key: "breakdown-chart", className: "bg-white rounded-xl shadow-lg p-6"},
+                      h('h3', {className: "text-lg font-semibold text-gray-800 mb-4"}, "Contributions vs Returns Breakdown"),
+                      h(ResponsiveContainer, {width: "100%", height: 300},
+                        h(BarChart, {data: results.chartData.filter((_, index) => index % 2 === 0)},
+                          h(CartesianGrid, {strokeDasharray: "3 3"}),
+                          h(XAxis, {dataKey: "year"}),
+                          h(YAxis, {tickFormatter: (value) => formatCurrency(value)}),
+                          h(Tooltip, {
+                            formatter: (value, name) => [formatCurrency(value), name],
+                            labelFormatter: (label) => `Year ${label}`
+                          }),
+                          h(Legend),
+                          h(Bar, {dataKey: "totalContributions", stackId: "a", fill: "#6b7280", name: "Contributions"}),
+                          h(Bar, {dataKey: "totalReturns", stackId: "a", fill: "#3b82f6", name: "Returns"})
+                        )
+                      )
+                    )
+                  ]
+                )
+              ),
+
+              h('div', {className: "mt-8 bg-white rounded-xl shadow-lg p-6"},
+                h('h3', {className: "text-lg font-semibold text-gray-800 mb-3"}, "Important Notes"),
+                h('div', {className: "text-sm text-gray-600 space-y-2"},
+                  h('p', null, "• This calculator provides estimates based on consistent monthly contributions and assumed annual returns."),
+                  h('p', null, "• Actual ETF performance will vary and past performance doesn't guarantee future results."),
+                  h('p', null, "• The 4% rule is based on historical data and assumes a balanced portfolio with 30-year retirement period."),
+                  h('p', null, "• Consider fees, taxes, and inflation when planning your investment strategy."),
+                  h('p', null, "• Dollar-cost averaging through regular contributions can help reduce the impact of market volatility."),
+                  h('p', null, "• Retirement income calculations don't account for taxes, healthcare costs, or changing expenses in retirement.")
+                )
+              )
+            )
+          );
+        }
+
+        ReactDOM.render(React.createElement(ETFSavingsCalculator), document.getElementById('root'));
+    </script>
 </body>
 </html>
