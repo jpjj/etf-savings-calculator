@@ -2,11 +2,6 @@ const { useState, useEffect } = React;
 const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } = Recharts;
 const { Calculator, TrendingUp, DollarSign, Clock } = LucideReact;
 
-function ETFSavingsCalculator() {
-  import React, { useState, useEffect } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { Calculator, TrendingUp, DollarSign, Clock } from 'lucide-react';
-
 export default function ETFSavingsCalculator() {
   const [monthlyContribution, setMonthlyContribution] = useState(500);
   const [annualReturn, setAnnualReturn] = useState(7);
@@ -346,7 +341,6 @@ export default function ETFSavingsCalculator() {
       </div>
     </div>
   );
-}
 }
 
 // Render the component
